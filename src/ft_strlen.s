@@ -16,5 +16,4 @@ _loop:
 	add rdx, 1
 	jmp _loop
 
-
 section .note.GNU-stack noalloc noexec nowrite
