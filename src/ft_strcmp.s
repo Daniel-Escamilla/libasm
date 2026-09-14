@@ -1,11 +1,6 @@
 global ft_strcmp
 
 ft_strcmp:
-	jmp _loop
-
-_end:
-	ret
-
 _loop:
 	movzx eax, byte [rdi]
 	movzx ecx, byte [rsi]
@@ -18,5 +13,7 @@ _loop:
 	add rdi, 1
 	add rsi, 1
 	jmp _loop
+_end:
+	ret
 
 section .note.GNU-stack noaxloc noexec nowrite
