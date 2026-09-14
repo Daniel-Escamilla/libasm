@@ -1,16 +1,14 @@
 global ft_strlen
 
-section .data
-label: db "Frase a analizar", 0
-
 section .text
 ft_strlen:
 	xor rdx, rdx
 	jmp _loop
-	_end:
+
+_end:
 	mov rax, rdx
 	ret
-
+	
 _loop:
 	cmp byte [rdi], 0
 	je _end
