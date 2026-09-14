@@ -3,7 +3,9 @@ NAME = $(LIB_DIR)/libasm.a
 
 SRC_DIR = src
 
-SOURCE_FILES =  ft_strlen.s \
+SOURCE_FILES =	ft_strlen.s \
+				ft_strcpy.s \
+				ft_strcmp.s \
 
 OBJECTS_DIR = objects
 
