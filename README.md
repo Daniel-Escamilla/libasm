@@ -6,5 +6,3 @@ Intel) de varias funciones de la libc — `strlen`, `strcpy`, `strcmp`,
 
 Bonus: `ft_atoi_base` y funciones sobre listas enlazadas
 (`push_front`, `size`, `sort`, `remove_if`) también en ensamblador.
-
-Sujeto completo en `libasm.pdf`.

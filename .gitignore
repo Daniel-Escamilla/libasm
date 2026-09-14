@@ -1,1 +1,7 @@
 *.pdf
+*.a
+*.o
+objects/
+lib/
+docs/
+main.c
