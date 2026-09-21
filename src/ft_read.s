@@ -2,6 +2,7 @@ global ft_read
 
 extern __errno_location
 
+section .text
 ft_read:
 	mov eax, 0
 	syscall

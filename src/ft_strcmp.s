@@ -1,5 +1,6 @@
 global ft_strcmp
 
+section .text
 ft_strcmp:
 _loop:
 	movzx eax, byte [rdi]

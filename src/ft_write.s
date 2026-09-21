@@ -2,6 +2,7 @@ global ft_write
 
 extern __errno_location
 
+section .text
 ft_write:
 	mov eax, 1
 	syscall
