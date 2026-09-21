@@ -55,7 +55,6 @@ test: test-errno
 	@gcc main.c $(NAME) -o $(OBJECTS_DIR)/test 2>$(OBJECTS_DIR)/.err; \
 	grep -v -e "missing .note.GNU-stack" -e "NOTE: This behaviour" $(OBJECTS_DIR)/.err; \
 	rm -f $(OBJECTS_DIR)/.err
-	@echo
 	@$(OBJECTS_DIR)/test
 
 clean:

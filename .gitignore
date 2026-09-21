@@ -5,3 +5,4 @@ objects/
 lib/
 docs/
 *.c
+!main.c
