@@ -4,4 +4,4 @@
 objects/
 lib/
 docs/
-main.c
+*.c
