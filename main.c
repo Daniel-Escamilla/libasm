@@ -11,7 +11,6 @@
 #define CYAN      "\x1b[36m"
 #define GREEN     "\x1b[32m"
 #define RED       "\x1b[31m"
-
 #define SQ_OK     "\x1b[32m✓\x1b[0m"
 #define SQ_FAIL   "\x1b[31m✗\x1b[0m"
 
@@ -22,217 +21,156 @@ ssize_t ft_write(int fd, const void *buf, size_t count);
 ssize_t ft_read(int fd, void *buf, size_t count);
 char    *ft_strdup(const char *s);
 
-static int g_pass;
-static int g_total;
-
-static int sign(int n) {
-    if (n < 0)
-        return (-1);
-    if (n > 0)
-        return (1);
-    return (0);
-}
-
-static void escape_str(char *dst, const char *src, size_t size) {
-    size_t i = 0;
-    size_t j = 0;
-
-    dst[j++] = '"';
-    while (src[i] && j + 3 < size) {
-        if (src[i] == '\n') {
-            dst[j++] = '\\';
-            dst[j++] = 'n';
-        } else {
-            dst[j++] = src[i];
-        }
-        i++;
-    }
-    dst[j++] = '"';
-    dst[j] = '\0';
-}
+static int g_pass, g_total;
 
 static void title(const char *name) {
-    printf("\n" BOLD CYAN "─── [ %s ] ─────────────" RESET "\n", name);
+    static int first = 1;
+    printf("%s" BOLD CYAN "─── [ %s ] ─────────────" RESET "\n", first ? "" : "\n", name);
+    first = 0;
 }
 
 static void report(int ok, const char *fmt, ...) {
     va_list ap;
     char    buf[256];
 
-    g_total++;
-    g_pass += (ok != 0);
-
+    g_total++; g_pass += (ok != 0);
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-
     printf("  %-68s %s\n", buf, ok ? SQ_OK : SQ_FAIL);
 }
 
+static void format_str(char *dst, const char *src, size_t sz) {
+    if (!src) { snprintf(dst, sz, "NULL"); return; }
+    if (strlen(src) > 15) { snprintf(dst, sz, "\"%.10s...\"", src); return; }
+    size_t j = 0;
+    dst[j++] = '"';
+    for (size_t i = 0; src[i] && j + 5 < sz; i++) {
+        unsigned char c = (unsigned char)src[i];
+        if (c == '\n') { dst[j++] = '\\'; dst[j++] = 'n'; }
+        else if (c == '\t') { dst[j++] = '\\'; dst[j++] = 't'; }
+        else if (c < 32 || c >= 127) { j += snprintf(dst + j, sz - j, "\\x%02x", c); }
+        else dst[j++] = c;
+    }
+    dst[j++] = '"'; dst[j] = '\0';
+}
+
 void test_strlen(void) {
-    char    *tests[] = {"", "a", "Hola mundo!"};
-    char    input[64];
-    size_t  mine;
-    size_t  real;
-    int     n;
-    int     i;
+    char long_str[10001]; memset(long_str, 'A', 10000); long_str[10000] = '\0';
+    char *tests[] = {"", "a", "Hola mundo!\n", long_str, NULL};
+    char input[64];
 
     title("ft_strlen");
-    n = sizeof(tests) / sizeof(tests[0]);
-    i = 0;
-    while (i < n) {
-        mine = ft_strlen(tests[i]);
-        real = strlen(tests[i]);
-        snprintf(input, sizeof(input), "\"%s\"", tests[i]);
-        report(mine == real, "%-18s " DIM "->" RESET " mine=%zu real=%zu",
-            input, mine, real);
-        i++;
+    for (int i = 0; tests[i]; i++) {
+        size_t mine = ft_strlen(tests[i]), real = strlen(tests[i]);
+        format_str(input, tests[i], sizeof(input));
+        report(mine == real, "%-18s " DIM "->" RESET " mine=%zu real=%zu", input, mine, real);
     }
 }
 
 void test_strcpy(void) {
-    char    *tests[] = {"", "a", "Hola mundo!"};
-    char    buf_mine[64];
-    char    buf_real[64];
-    char    input[64];
-    int     n;
-    int     i;
+    char *tests[] = {"", "a", "Hola mundo!\n", NULL};
+    char b1[64], b2[64], input[64], out[64];
 
     title("ft_strcpy");
-    n = sizeof(tests) / sizeof(tests[0]);
-    i = 0;
-    while (i < n) {
-        ft_strcpy(buf_mine, tests[i]);
-        strcpy(buf_real, tests[i]);
-        snprintf(input, sizeof(input), "\"%s\"", tests[i]);
-        report(strcmp(buf_mine, buf_real) == 0,
-            "%-18s " DIM "->" RESET " mine=\"%s\" real=\"%s\"",
-            input, buf_mine, buf_real);
-        i++;
+    for (int i = 0; tests[i]; i++) {
+        char *r1 = ft_strcpy(b1, tests[i]), *r2 = strcpy(b2, tests[i]);
+        format_str(input, tests[i], sizeof(input));
+        format_str(out, b1, sizeof(out));
+        report(!strcmp(b1, b2) && r1 == b1, "%-18s " DIM "->" RESET " mine=%s ret_ok=%s",
+               input, out, (r1 == b1) ? "yes" : "no");
     }
 }
 
 void test_strcmp(void) {
-    char    *s1[] = {"abc", "abc", "abc", "a", "abc", "", "", "Hola"};
-    char    *s2[] = {"abc", "abd", "ab", "abc", "a", "", "x", "Hola"};
-    char    cmp_str[64];
-    int     mine;
-    int     real;
-    int     n;
-    int     i;
+    char *s1[] = {"abc", "abc", "abc", "a", "", "\x80", NULL};
+    char *s2[] = {"abc", "abd", "ab",  "abc", "", "a",    NULL};
+    char str1[32], str2[32], cmp[128]; /* Aumentado a 128 para evitar truncamiento */
 
     title("ft_strcmp");
-    n = sizeof(s1) / sizeof(s1[0]);
-    i = 0;
-    while (i < n) {
-        mine = ft_strcmp(s1[i], s2[i]);
-        real = strcmp(s1[i], s2[i]);
-        snprintf(cmp_str, sizeof(cmp_str), "\"%s\" vs \"%s\"", s1[i], s2[i]);
-        report(sign(mine) == sign(real),
-            "%-18s " DIM "->" RESET " mine=%d real=%d",
-            cmp_str, mine, real);
-        i++;
+    for (int i = 0; s1[i]; i++) {
+        int m = ft_strcmp(s1[i], s2[i]), r = strcmp(s1[i], s2[i]);
+        format_str(str1, s1[i], sizeof(str1));
+        format_str(str2, s2[i], sizeof(str2));
+        snprintf(cmp, sizeof(cmp), "%s vs %s", str1, str2);
+        int ok = (m < 0 && r < 0) || (m > 0 && r > 0) || (m == 0 && r == 0);
+        report(ok, "%-18s " DIM "->" RESET " mine=%d real=%d", cmp, m, r);
     }
 }
 
-void test_write(void) {
-    char    *msg = "Hola mundo!\n";
-    char    escaped[64];
-    int     fds[2];
-    char    buf[64];
-    ssize_t mine;
-    ssize_t real;
-    int     mine_errno;
-    int     real_errno;
+static void test_write_case(const void *buf, size_t count, int custom_fd, const char *label) {
+    int fds[2]; pipe(fds);
+    int fd = custom_fd ? custom_fd : fds[1];
 
-    escape_str(escaped, msg, sizeof(escaped));
+    errno = 0; ssize_t m = ft_write(fd, buf, count); int m_err = errno;
+    errno = 0; ssize_t r = write(fd, buf, count);    int r_err = errno;
+    close(fds[0]); close(fds[1]);
 
-    title("ft_write");
-    pipe(fds);
-    mine = ft_write(fds[1], msg, strlen(msg));
-    read(fds[0], buf, sizeof(buf));
-    report((mine == (ssize_t)strlen(msg)) && (memcmp(buf, msg, mine) == 0),
-        "%-18s " DIM "->" RESET " mine=%zd real=%zu",
-        escaped, mine, strlen(msg));
-    close(fds[0]);
-    close(fds[1]);
-
-    errno = 0;
-    mine = ft_write(-1, msg, strlen(msg));
-    mine_errno = errno;
-    errno = 0;
-    real = write(-1, msg, strlen(msg));
-    real_errno = errno;
-    report((mine == -1) && (real == -1) && (mine_errno == real_errno),
-        "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)",
-        "fd=-1", mine, mine_errno, real, real_errno);
+    if (m_err || r_err)
+        report(m == r && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, m, m_err, r, r_err);
+    else
+        report(m == r, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, m, r);
 }
 
-static void test_read(void) {
-    char    *msg = "Hola mundo!\n";
-    char    escaped[64];
-    int     fds[2];
-    char    buf_mine[64];
-    char    buf_real[64];
-    ssize_t mine;
-    ssize_t real;
-    int     mine_errno;
-    int     real_errno;
+void test_write(void) {
+    title("ft_write");
+    test_write_case("Hola mundo!\n", 12, 0, "\"Hola mundo!\\n\"");
+    test_write_case("Hola", 0, 0, "count=0");
+    test_write_case("Hola", 4, -1, "fd=-1");
+    test_write_case(NULL, 5, 0, "buf=NULL");
+}
 
-    escape_str(escaped, msg, sizeof(escaped));
+static void test_read_case(const char *feed, size_t count, void *buf, int custom_fd, const char *label) {
+    int fds[2]; pipe(fds);
+    int fd = custom_fd ? custom_fd : fds[0];
 
-    title("ft_read");
+    if (feed) (void)write(fds[1], feed, strlen(feed));
+    errno = 0; ssize_t m = ft_read(fd, buf, count); int m_err = errno;
+    close(fds[0]); close(fds[1]);
+
     pipe(fds);
-    write(fds[1], msg, strlen(msg));
-    mine = ft_read(fds[0], buf_mine, sizeof(buf_mine));
-    report((mine == (ssize_t)strlen(msg)) && (memcmp(buf_mine, msg, mine) == 0),
-        "%-18s " DIM "->" RESET " mine=%zd real=%zu",
-        escaped, mine, strlen(msg));
-    close(fds[0]);
-    close(fds[1]);
+    fd = custom_fd ? custom_fd : fds[0];
+    if (feed) (void)write(fds[1], feed, strlen(feed));
+    errno = 0; ssize_t r = read(fd, buf, count); int r_err = errno;
+    close(fds[0]); close(fds[1]);
 
-    errno = 0;
-    mine = ft_read(-1, buf_mine, sizeof(buf_mine));
-    mine_errno = errno;
-    errno = 0;
-    real = read(-1, buf_real, sizeof(buf_real));
-    real_errno = errno;
-    report((mine == -1) && (real == -1) && (mine_errno == real_errno),
-        "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)",
-        "fd=-1", mine, mine_errno, real, real_errno);
+    if (m_err || r_err)
+        report(m == r && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, m, m_err, r, r_err);
+    else
+        report(m == r, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, m, r);
+}
+
+void test_read(void) {
+    char buf[64];
+    title("ft_read");
+    test_read_case("Hola!\n", 6, buf, 0, "\"Hola!\\n\"");
+    test_read_case("Hola", 0, buf, 0, "count=0");
+    test_read_case("Hola", 6, buf, -1, "fd=-1");
+    test_read_case("Hola", 5, NULL, 0, "buf=NULL");
 }
 
 void test_strdup(void) {
-    char    *tests[] = {"", "a", "Hola mundo!"};
-    char    input[64];
-    char    *mine;
-    char    *real;
-    int     n;
-    int     i;
+    char *tests[] = {"", "a", "Hola mundo!\n", NULL};
+    char input[64], out[64];
 
     title("ft_strdup");
-    n = sizeof(tests) / sizeof(tests[0]);
-    i = 0;
-    while (i < n) {
-        mine = ft_strdup(tests[i]);
-        real = strdup(tests[i]);
-        snprintf(input, sizeof(input), "\"%s\"", tests[i]);
-        report((mine != NULL && real != NULL) && (strcmp(mine, real) == 0),
-            "%-18s " DIM "->" RESET " mine=\"%s\" real=\"%s\"",
-            input, mine ? mine : "NULL", real ? real : "NULL");
-        free(mine);
-        free(real);
-        i++;
+    for (int i = 0; tests[i]; i++) {
+        char *m = ft_strdup(tests[i]), *r = strdup(tests[i]);
+        format_str(input, tests[i], sizeof(input));
+        format_str(out, m, sizeof(out));
+        report(m && r && !strcmp(m, r) && m != tests[i],
+               "%-18s " DIM "->" RESET " mine=%s ptr_diff=%s",
+               input, out, (m != tests[i]) ? "yes" : "no");
+        free(m); free(r);
     }
 }
 
 static void summary(void) {
     printf("\n" BOLD "────────────────────────────────────────────────────────────" RESET "\n");
-    if (g_pass == g_total) {
+    if (g_pass == g_total)
         printf("  " BOLD GREEN "RESULTADO: %d/%d PRUEBAS SUPERADAS (100%%) ✔" RESET "\n", g_pass, g_total);
-    } else {
+    else
         printf("  " BOLD RED "RESULTADO: %d/%d SUPERADAS, %d FALLIDAS ✘" RESET "\n", g_pass, g_total, g_total - g_pass);
-    }
     printf(BOLD "────────────────────────────────────────────────────────────" RESET "\n\n");
 }
 
