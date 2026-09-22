@@ -14,12 +14,12 @@
 #define SQ_OK     "\x1b[32m✓\x1b[0m"
 #define SQ_FAIL   "\x1b[31m✗\x1b[0m"
 
-size_t  ft_strlen(const char *s);
+size_t  ft_strlen(const char *str);
 char    *ft_strcpy(char *dest, const char *src);
-int     ft_strcmp(const char *s1, const char *s2);
-ssize_t ft_write(int fd, const void *buf, size_t count);
-ssize_t ft_read(int fd, void *buf, size_t count);
-char    *ft_strdup(const char *s);
+int     ft_strcmp(const char *str1, const char *str2);
+ssize_t ft_write(int fdd, const void *buf, size_t count);
+ssize_t ft_read(int fdd, void *buf, size_t count);
+char    *ft_strdup(const char *str);
 
 static int g_pass, g_total;
 
@@ -29,30 +29,30 @@ static void title(const char *name) {
     first = 0;
 }
 
-static void report(int ok, const char *fmt, ...) {
-    va_list ap;
+static void report(int is_ok, const char *fmt, ...) {
+    va_list args;
     char    buf[256];
 
-    g_total++; g_pass += (ok != 0);
-    va_start(ap, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
-    printf("  %-68s %s\n", buf, ok ? SQ_OK : SQ_FAIL);
+    g_total++; g_pass += (is_ok != 0);
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    printf("  %-68s %s\n", buf, is_ok ? SQ_OK : SQ_FAIL);
 }
 
-static void format_str(char *dst, const char *src, size_t sz) {
-    if (!src) { snprintf(dst, sz, "NULL"); return; }
-    if (strlen(src) > 15) { snprintf(dst, sz, "\"%.10s...\"", src); return; }
-    size_t j = 0;
-    dst[j++] = '"';
-    for (size_t i = 0; src[i] && j + 5 < sz; i++) {
-        unsigned char c = (unsigned char)src[i];
-        if (c == '\n') { dst[j++] = '\\'; dst[j++] = 'n'; }
-        else if (c == '\t') { dst[j++] = '\\'; dst[j++] = 't'; }
-        else if (c < 32 || c >= 127) { j += snprintf(dst + j, sz - j, "\\x%02x", c); }
-        else dst[j++] = c;
+static void format_str(char *dst, const char *src, size_t size) {
+    if (!src) { snprintf(dst, size, "NULL"); return; }
+    if (strlen(src) > 15) { snprintf(dst, size, "\"%.10s...\"", src); return; }
+    size_t idx_j = 0;
+    dst[idx_j++] = '"';
+    for (size_t idx_i = 0; src[idx_i] && idx_j + 5 < size; idx_i++) {
+        unsigned char chr = (unsigned char)src[idx_i];
+        if (chr == '\n') { dst[idx_j++] = '\\'; dst[idx_j++] = 'n'; }
+        else if (chr == '\t') { dst[idx_j++] = '\\'; dst[idx_j++] = 't'; }
+        else if (chr < 32 || chr >= 127) { idx_j += snprintf(dst + idx_j, size - idx_j, "\\x%02x", chr); }
+        else dst[idx_j++] = chr;
     }
-    dst[j++] = '"'; dst[j] = '\0';
+    dst[idx_j++] = '"'; dst[idx_j] = '\0';
 }
 
 void test_strlen(void) {
@@ -61,56 +61,56 @@ void test_strlen(void) {
     char input[64];
 
     title("ft_strlen");
-    for (int i = 0; tests[i]; i++) {
-        size_t mine = ft_strlen(tests[i]), real = strlen(tests[i]);
-        format_str(input, tests[i], sizeof(input));
+    for (int idx = 0; tests[idx]; idx++) {
+        size_t mine = ft_strlen(tests[idx]), real = strlen(tests[idx]);
+        format_str(input, tests[idx], sizeof(input));
         report(mine == real, "%-18s " DIM "->" RESET " mine=%zu real=%zu", input, mine, real);
     }
 }
 
 void test_strcpy(void) {
     char *tests[] = {"", "a", "Hola mundo!\n", NULL};
-    char b1[64], b2[64], input[64], out[64];
+    char buf1[64], buf2[64], input[64], out[64];
 
     title("ft_strcpy");
-    for (int i = 0; tests[i]; i++) {
-        char *r1 = ft_strcpy(b1, tests[i]);
-        strcpy(b2, tests[i]);
-        format_str(input, tests[i], sizeof(input));
-        format_str(out, b1, sizeof(out));
-        report(!strcmp(b1, b2) && r1 == b1, "%-18s " DIM "->" RESET " mine=%s ret_ok=%s",
-               input, out, (r1 == b1) ? "yes" : "no");
+    for (int idx = 0; tests[idx]; idx++) {
+        char *res1 = ft_strcpy(buf1, tests[idx]);
+        strcpy(buf2, tests[idx]);
+        format_str(input, tests[idx], sizeof(input));
+        format_str(out, buf1, sizeof(out));
+        report(!strcmp(buf1, buf2) && res1 == buf1, "%-18s " DIM "->" RESET " mine=%s ret_ok=%s",
+               input, out, (res1 == buf1) ? "yes" : "no");
     }
 }
 
 void test_strcmp(void) {
-    char *s1[] = {"abc", "abc", "abc", "a", "", "\x80", NULL};
-    char *s2[] = {"abc", "abd", "ab",  "abc", "", "a",    NULL};
-    char str1[32], str2[32], cmp[128]; /* Aumentado a 128 para evitar truncamiento */
+    char *arr1[] = {"abc", "abc", "abc", "a", "", "\x80", NULL};
+    char *arr2[] = {"abc", "abd", "ab",  "abc", "", "a",    NULL};
+    char str1[32], str2[32], cmp[128];
 
     title("ft_strcmp");
-    for (int i = 0; s1[i]; i++) {
-        int m = ft_strcmp(s1[i], s2[i]), r = strcmp(s1[i], s2[i]);
-        format_str(str1, s1[i], sizeof(str1));
-        format_str(str2, s2[i], sizeof(str2));
+    for (int idx = 0; arr1[idx]; idx++) {
+        int mine_res = ft_strcmp(arr1[idx], arr2[idx]), real_res = strcmp(arr1[idx], arr2[idx]);
+        format_str(str1, arr1[idx], sizeof(str1));
+        format_str(str2, arr2[idx], sizeof(str2));
         snprintf(cmp, sizeof(cmp), "%s vs %s", str1, str2);
-        int ok = (m < 0 && r < 0) || (m > 0 && r > 0) || (m == 0 && r == 0);
-        report(ok, "%-18s " DIM "->" RESET " mine=%d real=%d", cmp, m, r);
+        int is_ok = (mine_res < 0 && real_res < 0) || (mine_res > 0 && real_res > 0) || (mine_res == 0 && real_res == 0);
+        report(is_ok, "%-18s " DIM "->" RESET " mine=%d real=%d", cmp, mine_res, real_res);
     }
 }
 
 static void test_write_case(const void *buf, size_t count, int custom_fd, const char *label) {
     int fds[2]; pipe(fds);
-    int fd = custom_fd ? custom_fd : fds[1];
+    int curr_fd = custom_fd ? custom_fd : fds[1];
 
-    errno = 0; ssize_t m = ft_write(fd, buf, count); int m_err = errno;
-    errno = 0; ssize_t r = write(fd, buf, count);    int r_err = errno;
+    errno = 0; ssize_t mine_res = ft_write(curr_fd, buf, count); int m_err = errno;
+    errno = 0; ssize_t real_res = write(curr_fd, buf, count);    int r_err = errno;
     close(fds[0]); close(fds[1]);
 
     if (m_err || r_err)
-        report(m == r && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, m, m_err, r, r_err);
+        report(mine_res == real_res && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, mine_res, m_err, real_res, r_err);
     else
-        report(m == r, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, m, r);
+        report(mine_res == real_res, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, mine_res, real_res);
 }
 
 void test_write(void) {
@@ -123,22 +123,22 @@ void test_write(void) {
 
 static void test_read_case(const char *feed, size_t count, void *buf, int custom_fd, const char *label) {
     int fds[2]; pipe(fds);
-    int fd = custom_fd ? custom_fd : fds[0];
+    int curr_fd = custom_fd ? custom_fd : fds[0];
 
     if (feed) (void)write(fds[1], feed, strlen(feed));
-    errno = 0; ssize_t m = ft_read(fd, buf, count); int m_err = errno;
+    errno = 0; ssize_t mine_res = ft_read(curr_fd, buf, count); int m_err = errno;
     close(fds[0]); close(fds[1]);
 
     pipe(fds);
-    fd = custom_fd ? custom_fd : fds[0];
+    curr_fd = custom_fd ? custom_fd : fds[0];
     if (feed) (void)write(fds[1], feed, strlen(feed));
-    errno = 0; ssize_t r = read(fd, buf, count); int r_err = errno;
+    errno = 0; ssize_t real_res = read(curr_fd, buf, count); int r_err = errno;
     close(fds[0]); close(fds[1]);
 
     if (m_err || r_err)
-        report(m == r && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, m, m_err, r, r_err);
+        report(mine_res == real_res && m_err == r_err, "%-18s " DIM "->" RESET " mine=%zd (errno=%d) real=%zd (errno=%d)", label, mine_res, m_err, real_res, r_err);
     else
-        report(m == r, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, m, r);
+        report(mine_res == real_res, "%-18s " DIM "->" RESET " mine=%zd real=%zd", label, mine_res, real_res);
 }
 
 void test_read(void) {
@@ -155,14 +155,14 @@ void test_strdup(void) {
     char input[64], out[64];
 
     title("ft_strdup");
-    for (int i = 0; tests[i]; i++) {
-        char *m = ft_strdup(tests[i]), *r = strdup(tests[i]);
-        format_str(input, tests[i], sizeof(input));
-        format_str(out, m, sizeof(out));
-        report(m && r && !strcmp(m, r) && m != tests[i],
+    for (int idx = 0; tests[idx]; idx++) {
+        char *mine_str = ft_strdup(tests[idx]), *real_str = strdup(tests[idx]);
+        format_str(input, tests[idx], sizeof(input));
+        format_str(out, mine_str, sizeof(out));
+        report(mine_str && real_str && !strcmp(mine_str, real_str) && mine_str != tests[idx],
                "%-18s " DIM "->" RESET " mine=%s ptr_diff=%s",
-               input, out, (m != tests[i]) ? "yes" : "no");
-        free(m); free(r);
+               input, out, (mine_str != tests[idx]) ? "yes" : "no");
+        free(mine_str); free(real_str);
     }
 }
 
