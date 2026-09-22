@@ -74,7 +74,8 @@ void test_strcpy(void) {
 
     title("ft_strcpy");
     for (int i = 0; tests[i]; i++) {
-        char *r1 = ft_strcpy(b1, tests[i]), *r2 = strcpy(b2, tests[i]);
+        char *r1 = ft_strcpy(b1, tests[i]);
+        strcpy(b2, tests[i]);
         format_str(input, tests[i], sizeof(input));
         format_str(out, b1, sizeof(out));
         report(!strcmp(b1, b2) && r1 == b1, "%-18s " DIM "->" RESET " mine=%s ret_ok=%s",
